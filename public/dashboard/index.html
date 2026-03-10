@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chef Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 2rem;
+      font-size: 13px;
+    }
+    h1 { font-size: 1.5rem; color: #fff; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; font-size: 0.85rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-value.green { color: #6bc46d; }
+    .stat-value.red { color: #e74c3c; }
+    .stat-value.yellow { color: #f39c12; }
+    .stat-label {
+      color: #888;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .section { margin-bottom: 2.5rem; }
+    .section h2 {
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .badge {
+      background: #222;
+      color: #888;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.75rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #141414;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: #1a1a1a;
+      color: #888;
+      font-weight: 400;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #222;
+    }
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #1a1a1a;
+      color: #ccc;
+    }
+    tr:hover td { background: #1a1a1a; }
+    tr:last-child td { border-bottom: none; }
+    .status {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-subscribed { background: #1a3a1a; color: #6bc46d; }
+    .status-unsubscribed { background: #3a1a1a; color: #e74c3c; }
+    .status-pending { background: #3a3a1a; color: #f39c12; }
+    .status-unknown { background: #1a1a1a; color: #888; }
+    .event-tag {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+    .event-opt-in { background: #1a3a1a; color: #6bc46d; }
+    .event-opt-out { background: #3a1a1a; color: #e74c3c; }
+    .event-disclosure-sent { background: #1a2a3a; color: #5b9bd5; }
+    .event-consent-confirmed { background: #1a3a2a; color: #4ecdc4; }
+    .via-tag {
+      color: #888;
+      font-size: 0.75rem;
+    }
+    .phone { font-variant-numeric: tabular-nums; }
+    .time { color: #666; font-size: 0.75rem; white-space: nowrap; }
+    .clickable { cursor: pointer; }
+    .clickable:hover td { background: #1e1e1e; }
+    .refresh-btn {
+      background: #222;
+      border: 1px solid #333;
+      color: #ccc;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
+    .refresh-btn:hover { background: #333; }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .loading { color: #666; padding: 2rem; text-align: center; }
+    .detail-panel {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .detail-panel.open { display: block; }
+    .detail-panel h3 {
+      color: #fff;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+    .close-btn:hover { color: #fff; }
+    @media (max-width: 640px) {
+      body { padding: 1rem; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 0.75rem; }
+      th, td { padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-row">
+    <div>
+      <h1>👨🏼‍🍳 Chef Dashboard</h1>
+      <p class="subtitle">SMS Consent & Contact Management</p>
+    </div>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div class="section">
+    <h2>Contacts <span class="badge" id="contact-count">0</span></h2>
+    <table id="contacts-table">
+      <thead>
+        <tr>
+          <th>Phone</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Last Via</th>
+          <th>Events</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody id="contacts-body">
+        <tr><td colspan="6" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="detail-panel" id="detail-panel">
+    <h3>
+      <span id="detail-title">Event History</span>
+      <button class="close-btn" onclick="closeDetail()">✕</button>
+    </h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Via</th>
+          <th>Metadata</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="detail-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Recent Events <span class="badge" id="event-count">0</span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Phone</th>
+          <th>Event</th>
+          <th>Via</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="events-body">
+        <tr><td colspan="4" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = '/api';
+
+    async function fetchJson(url) {
+      const res = await fetch(url);
+      return res.json();
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts + 'Z');
+      return d.toLocaleString('en-US', {
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        hour12: false
+      });
+    }
+
+    function statusHtml(status) {
+      return `<span class="status status-${status}">${status}</span>`;
+    }
+
+    function eventHtml(event) {
+      return `<span class="event-tag event-${event}">${event}</span>`;
+    }
+
+    async function loadStats() {
+      const stats = await fetchJson(`${API}/stats`);
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${stats.totalContacts}</div>
+          <div class="stat-label">Total Contacts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value green">${stats.subscribed}</div>
+          <div class="stat-label">Subscribed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value red">${stats.unsubscribed}</div>
+          <div class="stat-label">Unsubscribed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value yellow">${stats.pending}</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${stats.totalEvents}</div>
+          <div class="stat-label">Total Events</div>
+        </div>
+      `;
+      document.getElementById('event-count').textContent = stats.totalEvents;
+    }
+
+    async function loadContacts() {
+      const contacts = await fetchJson(`${API}/contacts`);
+      document.getElementById('contact-count').textContent = contacts.length;
+      const tbody = document.getElementById('contacts-body');
+      if (contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">No contacts yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = contacts.map(c => `
+        <tr class="clickable" onclick="showDetail('${c.phone}', '${(c.name || '').replace(/'/g, "\\'")}')">
+          <td class="phone">${c.phone}</td>
+          <td>${c.name || '—'}</td>
+          <td>${statusHtml(c.status)}</td>
+          <td class="via-tag">${c.last_via || '—'}</td>
+          <td>${c.event_count}</td>
+          <td class="time">${formatTime(c.updated_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadRecentEvents() {
+      const events = await fetchJson(`${API}/events`);
+      const tbody = document.getElementById('events-body');
+      if (events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">No events yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = events.map(e => `
+        <tr>
+          <td class="phone">${e.phone}</td>
+          <td>${eventHtml(e.event)}</td>
+          <td class="via-tag">${e.via}</td>
+          <td class="time">${formatTime(e.timestamp)}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function showDetail(phone, name) {
+      const events = await fetchJson(`${API}/events?phone=${encodeURIComponent(phone)}`);
+      document.getElementById('detail-title').textContent = `${name || phone} — Event History`;
+      const tbody = document.getElementById('detail-body');
+      tbody.innerHTML = events.map(e => {
+        let meta = '—';
+        if (e.metadata) {
+          try { meta = JSON.stringify(JSON.parse(e.metadata), null, 0); } catch { meta = e.metadata; }
+          if (meta.length > 60) meta = meta.substring(0, 60) + '…';
+        }
+        return `
+          <tr>
+            <td>${eventHtml(e.event)}</td>
+            <td class="via-tag">${e.via}</td>
+            <td style="color:#666;font-size:0.75rem">${meta}</td>
+            <td class="time">${formatTime(e.timestamp)}</td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('detail-panel').classList.add('open');
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-panel').classList.remove('open');
+    }
+
+    async function loadAll() {
+      await Promise.all([loadStats(), loadContacts(), loadRecentEvents()]);
+    }
+
+    loadAll();
+    // Auto-refresh every 30s
+    setInterval(loadAll, 30000);
+  </script>
+</body>
+</html>
