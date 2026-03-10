@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscribe to SMS — Chef AI Assistant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.6rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    label {
+      font-size: 0.85rem;
+      color: #aaa;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+    input[type="tel"], input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="tel"]:focus, input[type="text"]:focus {
+      border-color: #6bc46d;
+    }
+    .consent-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .consent-group input[type="checkbox"] {
+      margin-top: 0.2rem;
+      width: 18px;
+      height: 18px;
+      accent-color: #6bc46d;
+      flex-shrink: 0;
+    }
+    .consent-text {
+      font-size: 0.8rem;
+      color: #999;
+      line-height: 1.6;
+    }
+    .consent-text a {
+      color: #6bc46d;
+      text-decoration: underline;
+    }
+    button[type="submit"] {
+      padding: 0.85rem;
+      background: #6bc46d;
+      color: #0a0a0a;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button[type="submit"]:hover {
+      opacity: 0.9;
+    }
+    button[type="submit"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .fine-print {
+      font-size: 0.75rem;
+      color: #666;
+      line-height: 1.6;
+      margin-top: 0.5rem;
+    }
+    .success {
+      text-align: center;
+      padding: 2rem 0;
+    }
+    .success h2 {
+      color: #6bc46d;
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .success p {
+      color: #aaa;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .hidden { display: none; }
+    .error {
+      color: #e74c3c;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="form-view">
+      <h1>📱 Subscribe to SMS</h1>
+      <p class="subtitle">
+        Get notifications, reminders, and updates from Chef — a personal AI assistant
+        operated by Ugur Volkan Gul.
+      </p>
+
+      <form id="subscribe-form" novalidate>
+        <div>
+          <label for="name">Your Name</label>
+          <input type="text" id="name" name="name" placeholder="Jane Doe" required>
+        </div>
+
+        <div>
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" required>
+          <div id="phone-error" class="error hidden"></div>
+        </div>
+
+        <div class="consent-group">
+          <input type="checkbox" id="consent" name="consent" required>
+          <div class="consent-text">
+            I agree to receive SMS messages from Chef AI Assistant at the phone number provided above.
+            I understand that message frequency may vary, and message &amp; data rates may apply.
+            I can reply <strong>STOP</strong> at any time to opt out.
+            I have read and agree to the <a href="/privacy" target="_blank">Privacy Policy</a>.
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" disabled>Subscribe</button>
+
+        <p class="fine-print">
+          By subscribing, you consent to receive automated SMS messages from +1 (336) 439-2433.
+          Consent is not a condition of any purchase. Reply STOP to unsubscribe. Reply HELP for help.
+          Msg &amp; data rates may apply. View our <a href="/privacy" style="color:#888;text-decoration:underline;">Privacy Policy</a>.
+        </p>
+      </form>
+    </div>
+
+    <div id="success-view" class="success hidden">
+      <h2>✅ You're subscribed!</h2>
+      <p>
+        You'll receive a confirmation text shortly at the number you provided.
+        Reply <strong>STOP</strong> at any time to unsubscribe.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('subscribe-form');
+    const consentBox = document.getElementById('consent');
+    const submitBtn = document.getElementById('submit-btn');
+    const phoneInput = document.getElementById('phone');
+    const phoneError = document.getElementById('phone-error');
+    const formView = document.getElementById('form-view');
+    const successView = document.getElementById('success-view');
+
+    consentBox.addEventListener('change', () => {
+      submitBtn.disabled = !consentBox.checked;
+    });
+
+    function normalizePhone(val) {
+      const digits = val.replace(/\D/g, '');
+      if (digits.length === 10) return '+1' + digits;
+      if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+      if (val.startsWith('+') && digits.length >= 10) return '+' + digits;
+      return null;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      phoneError.classList.add('hidden');
+
+      const name = document.getElementById('name').value.trim();
+      const rawPhone = phoneInput.value.trim();
+      const phone = normalizePhone(rawPhone);
+
+      if (!phone) {
+        phoneError.textContent = 'Please enter a valid US phone number.';
+        phoneError.classList.remove('hidden');
+        return;
+      }
+
+      if (!name) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subscribing...';
+
+      try {
+        const res = await fetch('https://sms.volkan.dev/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, consent: true, timestamp: new Date().toISOString() })
+        });
+
+        if (res.ok) {
+          formView.classList.add('hidden');
+          successView.classList.remove('hidden');
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (err) {
+        phoneError.textContent = 'Something went wrong. Please try again or text START to +1 (336) 439-2433.';
+        phoneError.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe';
+      }
+    });
+  </script>
+</body>
+</html>
